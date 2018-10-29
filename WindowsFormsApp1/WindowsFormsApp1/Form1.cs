@@ -95,6 +95,9 @@ namespace WindowsFormsApp1
                     if (!int.TryParse(cellValue, out int n))
                         continue;
 
+                    if (((string)xlRange.Cells[rowIndex, 4].Value2.ToString()).Contains("*"))
+                        continue;
+
                     var playerRating = new PlayerRating
                     {
                         RealTeam = currentTeam,
@@ -115,8 +118,8 @@ namespace WindowsFormsApp1
                         GolPareggio = int.Parse(xlRange.Cells[rowIndex, 16].Value2.ToString())
                     };
 
-                    //Enum.TryParse(xlRange.Cells[rowIndex, 2].Value2.ToString(), out Role role);
-                    //playerRating.Role = role;
+                    Enum.TryParse(xlRange.Cells[rowIndex, 2].Value2.ToString(), out Role role);
+                    playerRating.Role = role;
                     playerRatings.Add(playerRating);
                 }
             }
