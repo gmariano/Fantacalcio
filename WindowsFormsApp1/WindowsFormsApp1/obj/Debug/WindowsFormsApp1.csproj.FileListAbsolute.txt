@@ -13,7 +13,6 @@ C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\WindowsForms
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\WindowsFormsApp1.pdb
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\Newtonsoft.Json.dll
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\Newtonsoft.Json.xml
-C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csprojAssemblyReference.cache
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Form1.resources
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Properties.Resources.resources
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.GenerateResource.cache
@@ -21,3 +20,4 @@ C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsForms
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.CopyComplete
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.exe
 C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.pdb
+C:\MyGithub\Fantacalcio\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csprojAssemblyReference.cache

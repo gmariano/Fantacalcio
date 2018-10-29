@@ -2,6 +2,7 @@
 {
     public class PlayerRating
     {
+        public string RealTeam { get; set; }
         public string Code { get; set; }
         public Role Role { get; set; }
         public string Name { get; set; }
