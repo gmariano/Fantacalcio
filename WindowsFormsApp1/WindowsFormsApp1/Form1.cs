@@ -23,21 +23,36 @@ namespace WindowsFormsApp1
 
         private void button1_Click(object sender, EventArgs e)
         {
-            List<Team> teams = null;
-            if (File.Exists(ROSE_JSON_PATH))
+            try
             {
-                using (var streamReader = new StreamReader(ROSE_JSON_PATH))
-                {
-                    var json = streamReader.ReadToEnd();
-                    teams = JsonConvert.DeserializeObject<List<Team>>(json);
-                }
-            }
-            else
-            {
-                teams = GetTeamsFromExcel();
-            }
+                Cursor.Current = Cursors.WaitCursor;
 
-            FillDataGrid(teams);
+                List<Team> teams = null;
+                if (File.Exists(ROSE_JSON_PATH))
+                {
+                    using (var streamReader = new StreamReader(ROSE_JSON_PATH))
+                    {
+                        var json = streamReader.ReadToEnd();
+                        teams = JsonConvert.DeserializeObject<List<Team>>(json);
+                    }
+                }
+                else
+                {
+                    teams = GetTeamsFromExcel();
+                }
+
+                FillDataGrid(teams);
+
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                throw;
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
         }
 
         private void FillDataGrid(IReadOnlyCollection<Team> teams)
@@ -143,6 +158,11 @@ namespace WindowsFormsApp1
             Marshal.ReleaseComObject(xlApp);
 
             return teams;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
         }
     }
 
