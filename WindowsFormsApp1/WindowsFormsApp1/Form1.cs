@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using WindowsFormsApp1.Model;
 using Microsoft.Office.Interop.Excel;
@@ -14,8 +15,9 @@ namespace WindowsFormsApp1
     public partial class Form1 : Form
     {
         const string ROSE_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\_rose.json";
-        const string VOTI_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Voti\";
+        const string VOTI_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Voti";
         List<Team> teams = null;
+        List<int> availableRounds = new List<int>();
 
         public Form1()
         {
@@ -59,7 +61,19 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                GetPlayersRating(@"C:\Users\gmariano\Desktop\Fantagazzetta\Voti\01.xlsx", 1);
+                availableRounds = new List<int>();
+                foreach (var excelPath in Directory.GetFiles(VOTI_PATH, "*.xlsx"))
+                {
+                    int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
+                    if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
+                    {
+                        GetPlayersRatingFromExcel(excelPath, round);
+                    }
+                    availableRounds.Add(round);
+                }
+
+                comboBox1.DataSource = availableRounds;
+                comboBox1.ResetBindings();
             }
             catch (Exception exception)
             {
@@ -72,7 +86,7 @@ namespace WindowsFormsApp1
             }
         }
 
-        private List<PlayerRating> GetPlayersRating(string excelPath, int gameNumber)
+        private List<PlayerRating> GetPlayersRatingFromExcel(string excelPath, int round)
         {
             var xlApp = new Application();
             var xlWorkbook = xlApp.Workbooks.Open(excelPath);
@@ -120,6 +134,7 @@ namespace WindowsFormsApp1
 
                     Enum.TryParse(xlRange.Cells[rowIndex, 2].Value2.ToString(), out Role role);
                     playerRating.Role = role;
+                    playerRating.CalculateVotoFinale();
                     playerRatings.Add(playerRating);
                 }
             }
@@ -134,11 +149,9 @@ namespace WindowsFormsApp1
             Marshal.ReleaseComObject(xlWorkbook);
             Marshal.ReleaseComObject(xlApp);
 
-            using (var file = File.CreateText(VOTI_JSON_PATH+$"{gameNumber.ToString().PadLeft(2, '0')}"))
-            {
-                var serializer = new JsonSerializer();
-                serializer.Serialize(file, playerRatings);
-            }
+            var fileName = VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
+            var json = JsonConvert.SerializeObject(playerRatings);
+            File.WriteAllText(fileName, json);
 
             return playerRatings;
         }

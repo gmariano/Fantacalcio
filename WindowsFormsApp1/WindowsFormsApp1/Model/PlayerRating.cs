@@ -19,40 +19,39 @@
         public int AssistDaFermo { get; set; }
         public int GolVittoria { get; set; }
         public int GolPareggio { get; set; }
+        public decimal VotoFinale { get; set; }
 
-        public decimal VotoFinale
+        public void CalculateVotoFinale()
         {
-            get
+            if (Voto == 0)
             {
-                if (Voto == 0)
-                {
-                    return 0;
-                }
-
-                var bonusGoalPareggio = Role == Role.P ? 5 : 0.5m;
-                var bonusGoalVittoria = Role == Role.P ? 6m : 1;
-
-                var votoFinale = Voto
-                + (GolFatti * 3)
-                + (GolSubiti * -1)
-                + (RigoriParati * 3)
-                + (RigoriSubiti * -1)
-                + (RigoriSegnati * 3)
-                + (Autogol * -2)
-                + (Ammonizioni * -0.5m)
-                + (Espulsioni * -1)
-                + (Assist * 1)
-                + (AssistDaFermo * 1)
-                + (GolVittoria * bonusGoalVittoria)
-                + (GolPareggio * bonusGoalPareggio);
-
-                if (Role == Role.P && GolSubiti == 0)
-                {
-                    votoFinale = VotoFinale + 0.5m;
-                }
-
-                return votoFinale;
+                VotoFinale = 0;
+                return;
             }
+
+            var bonusGoalPareggio = Role == Role.P ? 5 : 0.5m;
+            var bonusGoalVittoria = Role == Role.P ? 6m : 1;
+
+            var votoFinale = Voto
+            + (GolFatti * 3)
+            + (GolSubiti * -1)
+            + (RigoriParati * 3)
+            + (RigoriSubiti * -1)
+            + (RigoriSegnati * 3)
+            + (Autogol * -2)
+            + (Ammonizioni * -0.5m)
+            + (Espulsioni * -1)
+            + (Assist * 1)
+            + (AssistDaFermo * 1)
+            + (GolVittoria * bonusGoalVittoria)
+            + (GolPareggio * bonusGoalPareggio);
+
+            if (Role == Role.P && GolSubiti == 0)
+            {
+                votoFinale = votoFinale + 0.5m;
+            }
+
+            VotoFinale = votoFinale;
         }
     }
 }
