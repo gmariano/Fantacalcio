@@ -14,6 +14,7 @@ namespace WindowsFormsApp1
     public partial class Form1 : Form
     {
         const string ROSE_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\_rose.json";
+        const string VOTI_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Voti\";
         List<Team> teams = null;
 
         public Form1()
@@ -26,7 +27,6 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                
                 if (File.Exists(ROSE_JSON_PATH))
                 {
                     using (var streamReader = new StreamReader(ROSE_JSON_PATH))
@@ -59,7 +59,7 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                Calculate(@"C:\Users\gmariano\Desktop\Fantagazzetta\Voti\01.xlsx");
+                GetPlayersRating(@"C:\Users\gmariano\Desktop\Fantagazzetta\Voti\01.xlsx", 1);
             }
             catch (Exception exception)
             {
@@ -72,7 +72,7 @@ namespace WindowsFormsApp1
             }
         }
 
-        private void Calculate(string excelPath)
+        private List<PlayerRating> GetPlayersRating(string excelPath, int gameNumber)
         {
             var xlApp = new Application();
             var xlWorkbook = xlApp.Workbooks.Open(excelPath);
@@ -104,18 +104,18 @@ namespace WindowsFormsApp1
                         Code = xlRange.Cells[rowIndex, 1]?.Value2?.ToString(),
                         Name = xlRange.Cells[rowIndex, 3]?.Value2?.ToString(),
                         Voto = decimal.Parse(xlRange.Cells[rowIndex, 4].Value2.ToString()),
-                        GolFatti = int.Parse(xlRange.Cells[rowIndex, 5].Value2.ToString()),
-                        GolSubiti = int.Parse(xlRange.Cells[rowIndex, 6].Value2.ToString()),
-                        RigoriParati = int.Parse(xlRange.Cells[rowIndex, 7].Value2.ToString()),
-                        RigoriSubiti = int.Parse(xlRange.Cells[rowIndex, 8].Value2.ToString()),
-                        RigoriSegnati = int.Parse(xlRange.Cells[rowIndex, 9].Value2.ToString()),
-                        Autogol = int.Parse(xlRange.Cells[rowIndex, 10].Value2.ToString()),
-                        Ammonizioni = int.Parse(xlRange.Cells[rowIndex, 11].Value2.ToString()),
-                        Espulsioni = int.Parse(xlRange.Cells[rowIndex, 12].Value2.ToString()),
-                        Assist = int.Parse(xlRange.Cells[rowIndex, 13].Value2.ToString()),
-                        AssistDaFermo = int.Parse(xlRange.Cells[rowIndex, 14].Value2.ToString()),
-                        GolVittoria = int.Parse(xlRange.Cells[rowIndex, 15].Value2.ToString()),
-                        GolPareggio = int.Parse(xlRange.Cells[rowIndex, 16].Value2.ToString())
+                        GolFatti = (int)xlRange.Cells[rowIndex, 5].Value2,
+                        GolSubiti = (int)xlRange.Cells[rowIndex, 6].Value2,
+                        RigoriParati = (int)xlRange.Cells[rowIndex, 7].Value2,
+                        RigoriSubiti = (int)xlRange.Cells[rowIndex, 8].Value2,
+                        RigoriSegnati = (int)xlRange.Cells[rowIndex, 9].Value2,
+                        Autogol = (int)xlRange.Cells[rowIndex, 10].Value2,
+                        Ammonizioni = (int)xlRange.Cells[rowIndex, 11].Value2,
+                        Espulsioni = (int)xlRange.Cells[rowIndex, 12].Value2,
+                        Assist = (int)xlRange.Cells[rowIndex, 13].Value2,
+                        AssistDaFermo = (int)xlRange.Cells[rowIndex, 14].Value2,
+                        GolVittoria = (int)xlRange.Cells[rowIndex, 15].Value2,
+                        GolPareggio = (int)xlRange.Cells[rowIndex, 16].Value2
                     };
 
                     Enum.TryParse(xlRange.Cells[rowIndex, 2].Value2.ToString(), out Role role);
@@ -133,6 +133,14 @@ namespace WindowsFormsApp1
             Marshal.ReleaseComObject(xlWorksheet);
             Marshal.ReleaseComObject(xlWorkbook);
             Marshal.ReleaseComObject(xlApp);
+
+            using (var file = File.CreateText(VOTI_JSON_PATH+$"{gameNumber.ToString().PadLeft(2, '0')}"))
+            {
+                var serializer = new JsonSerializer();
+                serializer.Serialize(file, playerRatings);
+            }
+
+            return playerRatings;
         }
 
         private static List<Team> GetTeamsFromExcel()
@@ -222,20 +230,22 @@ namespace WindowsFormsApp1
 
         private void FillDataGrid(IReadOnlyCollection<Team> teams)
         {
-            dataGridView1.ColumnCount = 5;
-            dataGridView1.RowCount = teams.Sum(x => x.Players.Count) + 20;
-
-            var i = 0;
+            var i = 1;
             foreach (var team in teams)
             {
-                dataGridView1.Rows[i++].Cells[0].Value = team.Name;
+                var grid = (DataGridView)(this.Controls.Find($"dataGridView{i}", false).Single());
+                grid.ColumnCount = 3;
+                grid.RowCount = team.Players.Count + 1;
+                var rowIndex = 0;
+
+                grid.Rows[rowIndex++].Cells[0].Value = team.Name;
                 team.Players.ForEach(
                     x =>
                     {
-                        dataGridView1.Rows[i].Cells[0].Value = x.Name;
-                        dataGridView1.Rows[i].Cells[1].Value = x.Role;
-                        dataGridView1.Rows[i].Cells[2].Value = x.RealTeam;
-                        i++;
+                        grid.Rows[rowIndex].Cells[0].Value = x.Name;
+                        grid.Rows[rowIndex].Cells[1].Value = x.Role;
+                        grid.Rows[rowIndex].Cells[2].Value = x.RealTeam;
+                        rowIndex++;
                     });
                 i++;
             }
