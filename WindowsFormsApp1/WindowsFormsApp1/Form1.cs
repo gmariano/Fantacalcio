@@ -16,8 +16,11 @@ namespace WindowsFormsApp1
     {
         const string ROSE_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\_rose.json";
         const string VOTI_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Voti";
+        const string FORMAZIONI_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Formazioni";
         List<Team> teams = null;
-        List<int> availableRounds = new List<int>();
+        List<int> availableRatingsRounds = new List<int>();
+        List<int> availableSelectionsRounds = new List<int>();
+        private string[] availableModules = new[] { "352", "343", "451", "442", "433", "532", "541" };
 
         public Form1()
         {
@@ -61,18 +64,28 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                availableRounds = new List<int>();
+                availableRatingsRounds = new List<int>();
                 foreach (var excelPath in Directory.GetFiles(VOTI_PATH, "*.xlsx"))
                 {
                     int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
                     {
-                        GetPlayersRatingFromExcel(excelPath, round);
+                        LoadPlayersRatingFromExcel(excelPath, round);
                     }
-                    availableRounds.Add(round);
+                    availableRatingsRounds.Add(round);
                 }
 
-                comboBox1.DataSource = availableRounds;
+                foreach (var excelPath in Directory.GetFiles(FORMAZIONI_PATH, "*.xlsx"))
+                {
+                    int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
+                    if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
+                    {
+                        LoadTeamSelectionsFromExcel(excelPath, round);
+                    }
+                    availableSelectionsRounds.Add(round);
+                }
+
+                //comboBox1.DataSource = availableRounds;
                 comboBox1.ResetBindings();
             }
             catch (Exception exception)
@@ -86,7 +99,54 @@ namespace WindowsFormsApp1
             }
         }
 
-        private List<PlayerRating> GetPlayersRatingFromExcel(string excelPath, int round)
+        private void LoadTeamSelectionsFromExcel(string excelPath, int round)
+        {
+            var xlApp = new Application();
+            var xlWorkbook = xlApp.Workbooks.Open(excelPath);
+            var xlWorksheet = xlWorkbook.Sheets[1];
+            var xlRange = xlWorksheet.UsedRange;
+
+            var rowCount = xlRange.Rows.Count;
+            var colCount = xlRange.Columns.Count;
+
+            var selections = new List<Selection>();
+
+            for (var rowIndex = 1; rowIndex <= rowCount; rowIndex++)
+            {
+                for (var columnIndex = 1; columnIndex <= colCount; columnIndex++)
+                {
+                    string cellValue = xlRange.Cells[rowIndex, columnIndex]?.Value2?.ToString();
+                    if (string.IsNullOrEmpty(cellValue))
+                    {
+                        continue;
+                    }
+
+                    if (!int.TryParse(cellValue, out int n))
+                        continue;
+
+                    if (!availableModules.Any(a => string.Equals(a, cellValue, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    var selection = new Selection
+                    {
+                        TeamName = xlRange.Cells[rowIndex - 1, columnIndex]?.Value2?.ToString(),
+                        PlayersOnField = new List<SelectedPlayer>(),
+                        PlayersOnBench = new List<SelectedPlayer>()
+                    };
+
+                    for (var i = rowIndex; string.Equals(xlRange.Cells[i, columnIndex]?.Value2?.ToString(), "Panchina", StringComparison.OrdinalIgnoreCase); i++)
+                    {
+                        
+                        //Enum.TryParse(xlRange.Cells[rowIndex, coordinates.StartCell.Column].Value2, out Role role);
+                        //string playerName = xlRange.Cells[rowIndex, coordinates.StartCell.Column + 1].Value2;
+                        //string realTeam = xlRange.Cells[rowIndex, coordinates.StartCell.Column + 2].Value2;
+                        //team.Players.Add(new Player(playerName, role, realTeam));
+                    }
+                }
+            }
+        }
+
+        private void LoadPlayersRatingFromExcel(string excelPath, int round)
         {
             var xlApp = new Application();
             var xlWorkbook = xlApp.Workbooks.Open(excelPath);
@@ -152,8 +212,6 @@ namespace WindowsFormsApp1
             var fileName = VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
             var json = JsonConvert.SerializeObject(playerRatings);
             File.WriteAllText(fileName, json);
-
-            return playerRatings;
         }
 
         private static List<Team> GetTeamsFromExcel()

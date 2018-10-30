@@ -60,6 +60,8 @@
     </Compile>
     <Compile Include="Model\Player.cs" />
     <Compile Include="Model\PlayerRating.cs" />
+    <Compile Include="Model\SelectedPlayer.cs" />
+    <Compile Include="Model\Slection.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Model\Role.cs" />
