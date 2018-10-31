@@ -65,7 +65,7 @@ namespace WindowsFormsApp1
             {
                 Cursor.Current = Cursors.WaitCursor;
                 availableRatingsRounds = new List<int>();
-                foreach (var excelPath in Directory.GetFiles(VOTI_PATH, "*.xlsx"))
+                foreach (var excelPath in Directory.GetFiles(VOTI_PATH, "*.xlsx").Where(w => !w.Contains("~")))
                 {
                     int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
@@ -75,9 +75,9 @@ namespace WindowsFormsApp1
                     availableRatingsRounds.Add(round);
                 }
 
-                foreach (var excelPath in Directory.GetFiles(FORMAZIONI_PATH, "*.xlsx"))
+                foreach (var excelPath in Directory.GetFiles(FORMAZIONI_PATH, "*.xlsx").Where(w=>!w.Contains("~")))
                 {
-                    int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
+                    var round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
                     {
                         LoadTeamSelectionsFromExcel(excelPath, round);
@@ -85,7 +85,8 @@ namespace WindowsFormsApp1
                     availableSelectionsRounds.Add(round);
                 }
 
-                //comboBox1.DataSource = availableRounds;
+                var availableRounds = availableRatingsRounds.Intersect(availableSelectionsRounds).ToList();
+                comboBox1.DataSource = availableRounds;
                 comboBox1.ResetBindings();
             }
             catch (Exception exception)
@@ -130,18 +131,51 @@ namespace WindowsFormsApp1
                     var selection = new Selection
                     {
                         TeamName = xlRange.Cells[rowIndex - 1, columnIndex]?.Value2?.ToString(),
+                        Module = cellValue,
                         PlayersOnField = new List<SelectedPlayer>(),
                         PlayersOnBench = new List<SelectedPlayer>()
                     };
 
-                    for (var i = rowIndex; string.Equals(xlRange.Cells[i, columnIndex]?.Value2?.ToString(), "Panchina", StringComparison.OrdinalIgnoreCase); i++)
+                    var i = rowIndex + 1;
+                    while(!string.Equals(xlRange.Cells[i, columnIndex]?.Value2?.ToString(), "Panchina", StringComparison.OrdinalIgnoreCase))
                     {
-                        
-                        //Enum.TryParse(xlRange.Cells[rowIndex, coordinates.StartCell.Column].Value2, out Role role);
-                        //string playerName = xlRange.Cells[rowIndex, coordinates.StartCell.Column + 1].Value2;
-                        //string realTeam = xlRange.Cells[rowIndex, coordinates.StartCell.Column + 2].Value2;
-                        //team.Players.Add(new Player(playerName, role, realTeam));
+                        var selectedPlayer = new SelectedPlayer();
+                        Enum.TryParse(xlRange.Cells[i, columnIndex].Value2, out Role role);
+                        selectedPlayer.Role = role;
+                        selectedPlayer.Name = xlRange.Cells[i, columnIndex + 1].Value2;
+                        selectedPlayer.RealTeam = xlRange.Cells[i, columnIndex + 2].Value2;
+                        decimal.TryParse(xlRange.Cells[i, columnIndex + 3].Value2.ToString(), out decimal voto);
+                        selectedPlayer.Voto = voto > 0 ? (decimal?)voto : null;
+                        decimal.TryParse(xlRange.Cells[i, columnIndex + 4].Value2.ToString(), out decimal votoFinale);
+                        selectedPlayer.VotoFinale = voto > 0 ? (decimal?)votoFinale : null;
+                        selection.PlayersOnField.Add(selectedPlayer);
+                        i++;
                     }
+
+                    i++;
+                    while(!((string)xlRange.Cells[i, columnIndex].Value2.ToString()).StartsWith("Totale", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (string.IsNullOrEmpty(xlRange.Cells[i, columnIndex]?.Value2?.ToString()))
+                        {
+                            i++;
+                            continue;
+                        }
+                        var selectedPlayer = new SelectedPlayer();
+                        Enum.TryParse(xlRange.Cells[i, columnIndex].Value2, out Role role);
+                        selectedPlayer.Role = role;
+                        selectedPlayer.Name = xlRange.Cells[i, columnIndex + 1].Value2;
+                        selectedPlayer.RealTeam = xlRange.Cells[i, columnIndex + 2].Value2;
+                        decimal.TryParse(xlRange.Cells[i, columnIndex + 3].Value2.ToString(), out decimal voto);
+                        selectedPlayer.Voto = voto > 0 ? (decimal?)voto : null;
+                        decimal.TryParse(xlRange.Cells[i, columnIndex + 4].Value2.ToString(), out decimal votoFinale);
+                        selectedPlayer.VotoFinale = voto > 0 ? (decimal?)votoFinale : null;
+                        selection.PlayersOnBench.Add(selectedPlayer);
+                        i++;
+                    }
+
+                    var totalScoreString = (string) xlRange.Cells[i, columnIndex].Value2.ToString();
+                    selection.TotalScore = decimal.Parse(totalScoreString.Substring(8).Replace(',', '.'));
+                    selections.Add(selection);
                 }
             }
         }

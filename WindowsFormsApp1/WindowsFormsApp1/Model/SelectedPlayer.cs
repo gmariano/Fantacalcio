@@ -2,7 +2,7 @@
 {
     public class SelectedPlayer : Player
     {
-        public decimal Voto { get; set; }
-        public decimal VotoFinale { get; set; }
+        public decimal? Voto { get; set; }
+        public decimal? VotoFinale { get; set; }
     }
 }
