@@ -178,6 +178,12 @@ namespace WindowsFormsApp1
                     selections.Add(selection);
                 }
             }
+
+            ExcelCleanup(xlWorkbook, xlApp, xlRange, xlWorksheet);
+
+            var fileName = FORMAZIONI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
+            var json = JsonConvert.SerializeObject(selections);
+            File.WriteAllText(fileName, json);
         }
 
         private void LoadPlayersRatingFromExcel(string excelPath, int round)
@@ -233,15 +239,7 @@ namespace WindowsFormsApp1
                 }
             }
 
-            //cleanup
-            xlWorkbook.Close();
-            xlApp.Quit();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Marshal.ReleaseComObject(xlRange);
-            Marshal.ReleaseComObject(xlWorksheet);
-            Marshal.ReleaseComObject(xlWorkbook);
-            Marshal.ReleaseComObject(xlApp);
+            ExcelCleanup(xlWorkbook, xlApp, xlRange, xlWorksheet);
 
             var fileName = VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
             var json = JsonConvert.SerializeObject(playerRatings);
@@ -320,15 +318,7 @@ namespace WindowsFormsApp1
                 serializer.Serialize(file, teams);
             }
 
-            //cleanup
-            xlWorkbook.Close();
-            xlApp.Quit();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Marshal.ReleaseComObject(xlRange);
-            Marshal.ReleaseComObject(xlWorksheet);
-            Marshal.ReleaseComObject(xlWorkbook);
-            Marshal.ReleaseComObject(xlApp);
+            ExcelCleanup(xlWorkbook, xlApp, xlRange, xlWorksheet);
 
             return teams;
         }
@@ -354,6 +344,18 @@ namespace WindowsFormsApp1
                     });
                 i++;
             }
+        }
+
+        private static void ExcelCleanup(Workbook xlWorkbook, Application xlApp, dynamic xlRange, dynamic xlWorksheet)
+        {
+            xlWorkbook.Close();
+            xlApp.Quit();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Marshal.ReleaseComObject(xlRange);
+            Marshal.ReleaseComObject(xlWorksheet);
+            Marshal.ReleaseComObject(xlWorkbook);
+            Marshal.ReleaseComObject(xlApp);
         }
     }
 
