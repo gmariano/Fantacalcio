@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows.Forms;
 using WindowsFormsApp1.Model;
 using Microsoft.Office.Interop.Excel;
@@ -14,13 +13,9 @@ namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
-        const string ROSE_JSON_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\_rose.json";
-        const string VOTI_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Voti";
-        const string FORMAZIONI_PATH = @"C:\Users\gmariano\Desktop\Fantagazzetta\Formazioni";
         List<Team> teams = null;
         List<int> availableRatingsRounds = new List<int>();
         List<int> availableSelectionsRounds = new List<int>();
-        private string[] availableModules = new[] { "352", "343", "451", "442", "433", "532", "541" };
 
         public Form1()
         {
@@ -32,9 +27,9 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                if (File.Exists(ROSE_JSON_PATH))
+                if (File.Exists(Configurations.ROSE_JSON_PATH))
                 {
-                    using (var streamReader = new StreamReader(ROSE_JSON_PATH))
+                    using (var streamReader = new StreamReader(Configurations.ROSE_JSON_PATH))
                     {
                         var json = streamReader.ReadToEnd();
                         teams = JsonConvert.DeserializeObject<List<Team>>(json);
@@ -65,7 +60,7 @@ namespace WindowsFormsApp1
             {
                 Cursor.Current = Cursors.WaitCursor;
                 availableRatingsRounds = new List<int>();
-                foreach (var excelPath in Directory.GetFiles(VOTI_PATH, "*.xlsx").Where(w => !w.Contains("~")))
+                foreach (var excelPath in Directory.GetFiles(Configurations.VOTI_PATH, "*.xlsx").Where(w => !w.Contains("~")))
                 {
                     int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
@@ -75,7 +70,7 @@ namespace WindowsFormsApp1
                     availableRatingsRounds.Add(round);
                 }
 
-                foreach (var excelPath in Directory.GetFiles(FORMAZIONI_PATH, "*.xlsx").Where(w=>!w.Contains("~")))
+                foreach (var excelPath in Directory.GetFiles(Configurations.FORMAZIONI_PATH, "*.xlsx").Where(w=>!w.Contains("~")))
                 {
                     var round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
@@ -125,7 +120,7 @@ namespace WindowsFormsApp1
                     if (!int.TryParse(cellValue, out int n))
                         continue;
 
-                    if (!availableModules.Any(a => string.Equals(a, cellValue, StringComparison.OrdinalIgnoreCase)))
+                    if (!Configurations.AVAILABLE_MODULES.Any(a => string.Equals(a, cellValue, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     var selection = new Selection
@@ -181,7 +176,7 @@ namespace WindowsFormsApp1
 
             ExcelCleanup(xlWorkbook, xlApp, xlRange, xlWorksheet);
 
-            var fileName = FORMAZIONI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
+            var fileName = Configurations.FORMAZIONI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
             var json = JsonConvert.SerializeObject(selections);
             File.WriteAllText(fileName, json);
         }
@@ -241,7 +236,7 @@ namespace WindowsFormsApp1
 
             ExcelCleanup(xlWorkbook, xlApp, xlRange, xlWorksheet);
 
-            var fileName = VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
+            var fileName = Configurations.VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json";
             var json = JsonConvert.SerializeObject(playerRatings);
             File.WriteAllText(fileName, json);
         }
@@ -312,7 +307,7 @@ namespace WindowsFormsApp1
                 teams.Add(team);
             }
 
-            using (var file = File.CreateText(ROSE_JSON_PATH))
+            using (var file = File.CreateText(Configurations.ROSE_JSON_PATH))
             {
                 var serializer = new JsonSerializer();
                 serializer.Serialize(file, teams);
@@ -356,6 +351,12 @@ namespace WindowsFormsApp1
             Marshal.ReleaseComObject(xlWorksheet);
             Marshal.ReleaseComObject(xlWorkbook);
             Marshal.ReleaseComObject(xlApp);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            var roundDetailsForm = new RoundDetails((int)comboBox1.SelectedValue);
+            roundDetailsForm.Show();
         }
     }
 

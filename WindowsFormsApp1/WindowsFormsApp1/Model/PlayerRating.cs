@@ -19,7 +19,7 @@
         public int AssistDaFermo { get; set; }
         public int GolVittoria { get; set; }
         public int GolPareggio { get; set; }
-        public decimal VotoFinale { get; set; }
+        public decimal? VotoFinale { get; set; }
 
         public void CalculateVotoFinale()
         {
