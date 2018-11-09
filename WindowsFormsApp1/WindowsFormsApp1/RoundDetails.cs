@@ -15,9 +15,28 @@ namespace WindowsFormsApp1
             InitializeComponent();
 
             var teams = GetTeams();
+            var realTeamNames = teams.SelectMany(t => t.Players.Select(p => p.RealTeam)).Distinct().ToList();
             var selections = GetSelections(round);
             var ratings = GetPlayersRating(round);
-            FillDataGrid(selections, ratings);
+            var teamPlayerRatings = teams.SelectMany(
+                t => t.Players.Select(
+                    player =>
+                    {
+                        var result = ratings.SingleOrDefault(s => string.Equals(player.Name, s.Name, StringComparison.OrdinalIgnoreCase) && s.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase));
+                        if (result != null)
+                        {
+                            return result;
+                        }
+
+                        if (!realTeamNames.Any(x => x.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, VotoFinale = 6m };
+                        }
+
+                        return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, VotoFinale = 0m };
+                    })).Where(w => w != null).ToList();
+
+            FillDataGrid(selections, teamPlayerRatings);
         }
 
         private List<Team> GetTeams()
@@ -63,14 +82,7 @@ namespace WindowsFormsApp1
 
                 foreach (var player in selection.PlayersOnField)
                 {
-                    var playerRating = ratings.SingleOrDefault(s => string.Equals(player.Name, s.Name, StringComparison.OrdinalIgnoreCase) && s.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)) ??
-                        new PlayerRating { Name = player.Name, VotoFinale = player.VotoFinale };
-                    var playerName = player.Name.Length > 13 ? player.Name.Substring(0, 13) : player.Name;
-                    grid1.Rows[rowIndex].Cells[0].Value = playerName;
-                    grid1.Rows[rowIndex].Cells[1].Value = player.VotoFinale;
-
-                    grid2.Rows[rowIndex].Cells[0].Value = playerName;
-                    grid2.Rows[rowIndex].Cells[1].Value = playerRating.VotoFinale;
+                    FillGridLine(ratings, player, grid1, rowIndex, grid2);
                     rowIndex++;
                 }
 
@@ -80,19 +92,23 @@ namespace WindowsFormsApp1
 
                 foreach (var player in selection.PlayersOnBench)
                 {
-                    var playerRating = ratings.SingleOrDefault(s => string.Equals(player.Name, s.Name, StringComparison.OrdinalIgnoreCase) && s.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)) ??
-                        new PlayerRating { Name = player.Name, VotoFinale = player.VotoFinale };
-                    var playerName = player.Name.Length > 13 ? player.Name.Substring(0, 13) : player.Name;
-                    grid1.Rows[rowIndex].Cells[0].Value = playerName;
-                    grid1.Rows[rowIndex].Cells[1].Value = player.VotoFinale;
-
-                    grid2.Rows[rowIndex].Cells[0].Value = playerName;
-                    grid2.Rows[rowIndex].Cells[1].Value = playerRating.VotoFinale;
+                    FillGridLine(ratings, player, grid1, rowIndex, grid2);
                     rowIndex++;
                 }
 
                 i++;
             }
+        }
+
+        private static void FillGridLine(IReadOnlyCollection<PlayerRating> ratings, SelectedPlayer player, DataGridView grid1, int rowIndex, DataGridView grid2)
+        {
+            var playerRating = ratings.SingleOrDefault(s => string.Equals(player.Name, s.Name, StringComparison.OrdinalIgnoreCase) && s.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase));
+            var playerName = player.Name.Length > 11 ? player.Name.Substring(0, 11) : player.Name;
+            grid1.Rows[rowIndex].Cells[0].Value = playerName;
+            grid1.Rows[rowIndex].Cells[1].Value = player.VotoFinale;
+
+            grid2.Rows[rowIndex].Cells[0].Value = playerName;
+            grid2.Rows[rowIndex].Cells[1].Value = playerRating.VotoFinale;
         }
     }
 }
