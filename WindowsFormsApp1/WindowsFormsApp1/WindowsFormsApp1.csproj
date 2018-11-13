@@ -67,6 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Model\Role.cs" />
     <Compile Include="Model\Team.cs" />
+    <Compile Include="Model\Round.cs" />
     <Compile Include="RoundDetails.cs">
       <SubType>Form</SubType>
     </Compile>

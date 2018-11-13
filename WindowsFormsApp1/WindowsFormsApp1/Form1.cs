@@ -14,8 +14,6 @@ namespace WindowsFormsApp1
     public partial class Form1 : Form
     {
         List<Team> teams = null;
-        List<int> availableRatingsRounds = new List<int>();
-        List<int> availableSelectionsRounds = new List<int>();
 
         public Form1()
         {
@@ -59,10 +57,10 @@ namespace WindowsFormsApp1
             try
             {
                 Cursor.Current = Cursors.WaitCursor;
-                availableRatingsRounds = new List<int>();
+                var availableRatingsRounds = new List<int>();
                 foreach (var excelPath in Directory.GetFiles(Configurations.VOTI_PATH, "*.xlsx").Where(w => !w.Contains("~")))
                 {
-                    int round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
+                    var round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
                     if (!File.Exists(excelPath.Replace(".xlsx", ".json")))
                     {
                         LoadPlayersRatingFromExcel(excelPath, round);
@@ -70,6 +68,7 @@ namespace WindowsFormsApp1
                     availableRatingsRounds.Add(round);
                 }
 
+                var availableLeagueRounds = new List<int>();
                 foreach (var excelPath in Directory.GetFiles(Configurations.FORMAZIONI_PATH, "*.xlsx").Where(w=>!w.Contains("~")))
                 {
                     var round = int.Parse(excelPath.Substring(excelPath.Length - 7, 2));
@@ -77,11 +76,14 @@ namespace WindowsFormsApp1
                     {
                         LoadTeamSelectionsFromExcel(excelPath, round);
                     }
-                    availableSelectionsRounds.Add(round);
+                    availableLeagueRounds.Add(round);
                 }
 
-                var availableRounds = availableRatingsRounds.Intersect(availableSelectionsRounds).ToList();
+                var availableRounds = availableLeagueRounds.Where(x => availableRatingsRounds.Contains(x + Configurations.ROUNDS_DIFFERENCE))
+                    .Select(s => new Round { LeagueRound = s, SerieARound = s + Configurations.ROUNDS_DIFFERENCE }).ToList();
+
                 comboBox1.DataSource = availableRounds;
+                comboBox1.DisplayMember = "DysplayText";
                 comboBox1.ResetBindings();
             }
             catch (Exception exception)
@@ -355,7 +357,7 @@ namespace WindowsFormsApp1
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var roundDetailsForm = new RoundDetails((int)comboBox1.SelectedValue);
+            var roundDetailsForm = new RoundDetails((Round)comboBox1.SelectedValue);
             roundDetailsForm.Show();
         }
     }
