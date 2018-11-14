@@ -104,12 +104,20 @@ namespace WindowsFormsApp1
             var i = 1;
             foreach (var selection in selections)
             {
-                var grid1 = (DataGridView)(this.Controls.Find($"dataGridView{i}", false).Single());
-                var grid2 = (DataGridView)(this.Controls.Find($"dataGridView{i}a", false).Single());
+                var panel = (Panel) this.Controls.Find($"panel{i}", false).Single();
+                var grid1 = (DataGridView)panel.Controls.Find($"dataGridView{i}", false).Single();
+                var grid2 = (DataGridView)panel.Controls.Find($"dataGridView{i}a", false).Single();
+                
+                grid1.BackgroundColor = panel.BackColor;
+                grid2.BackgroundColor = panel.BackColor;
                 grid1.ColumnCount = 2;
                 grid2.ColumnCount = 2;
                 grid1.RowCount = 20;
                 grid2.RowCount = 20;
+                grid1.Columns[0].Width = 88;
+                grid1.Columns[1].Width = 30;
+                grid2.Columns[0].Width = 88;
+                grid2.Columns[1].Width = 30;
                 var rowIndex = 0;
 
                 var idealSelection = idealSelections.Single(s => s.TeamName.EndsWith(selection.TeamName, StringComparison.OrdinalIgnoreCase));
@@ -124,11 +132,16 @@ namespace WindowsFormsApp1
                     rowIndex++;
                 }
 
+                grid1.Rows[rowIndex].DefaultCellStyle.BackColor = panel.BackColor;
+                grid2.Rows[rowIndex].DefaultCellStyle.BackColor = panel.BackColor;
                 rowIndex++;
                 grid1.Rows[rowIndex].Cells[0].Value = "Banch";
                 grid2.Rows[rowIndex].Cells[0].Value = "Banch";
-                grid1.Rows[rowIndex].Cells[1].Selected = true;
-                grid2.Rows[rowIndex].Cells[0].Selected = true;
+                grid1.Rows[rowIndex].DefaultCellStyle.BackColor = panel.BackColor;
+                grid2.Rows[rowIndex].DefaultCellStyle.BackColor = panel.BackColor;
+                grid1.CurrentCell = grid1.Rows[rowIndex].Cells[0];
+                grid2.CurrentCell = grid2.Rows[rowIndex].Cells[0];
+
                 rowIndex++;
 
                 for (var index = 0; index < 7; index++)
@@ -166,8 +179,7 @@ namespace WindowsFormsApp1
             }
 
             grid.Rows[rowIndex].DefaultCellStyle.ForeColor = color;
-            var playerName = player.Name.Length > 11 ? player.Name.Substring(0, 11) : player.Name;
-            grid.Rows[rowIndex].Cells[0].Value = playerName;
+            grid.Rows[rowIndex].Cells[0].Value = player.Name;
             grid.Rows[rowIndex].Cells[1].Value = player.VotoFinale;
         }
     }
