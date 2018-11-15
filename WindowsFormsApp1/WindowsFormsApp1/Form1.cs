@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -326,6 +327,7 @@ namespace WindowsFormsApp1
             foreach (var team in teams)
             {
                 var grid = (DataGridView)(this.Controls.Find($"dataGridView{i}", false).Single());
+                grid.BackgroundColor = this.BackColor;
                 grid.ColumnCount = 3;
                 grid.RowCount = team.Players.Count + 1;
                 var rowIndex = 0;
@@ -334,13 +336,40 @@ namespace WindowsFormsApp1
                 team.Players.ForEach(
                     x =>
                     {
-                        grid.Rows[rowIndex].Cells[0].Value = x.Name;
-                        grid.Rows[rowIndex].Cells[1].Value = x.Role;
-                        grid.Rows[rowIndex].Cells[2].Value = x.RealTeam;
+                        FillGridLine(x, grid, rowIndex);
                         rowIndex++;
                     });
                 i++;
             }
+        }
+
+        private static void FillGridLine(Player player, DataGridView grid, int rowIndex)
+        {
+            Color color;
+
+            switch (player.Role)
+            {
+                case Role.P:
+                    color = Color.Chocolate;
+                    break;
+                case Role.D:
+                    color = Color.Green;
+                    break;
+                case Role.C:
+                    color = Color.Blue;
+                    break;
+                case Role.A:
+                    color = Color.Red;
+                    break;
+                default:
+                    color = Color.White;
+                    break;
+            }
+
+            grid.Rows[rowIndex].DefaultCellStyle.ForeColor = color;
+            grid.Rows[rowIndex].Cells[0].Value = player.Name;
+            grid.Rows[rowIndex].Cells[1].Value = player.Role;
+            grid.Rows[rowIndex].Cells[2].Value = player.RealTeam;
         }
 
         private static void ExcelCleanup(Workbook xlWorkbook, Application xlApp, dynamic xlRange, dynamic xlWorksheet)

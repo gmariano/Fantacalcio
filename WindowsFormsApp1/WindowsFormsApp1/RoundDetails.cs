@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -31,10 +32,10 @@ namespace WindowsFormsApp1
 
                         if (!realTeamNames.Any(x => x.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)))
                         {
-                            return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, VotoFinale = 6m };
+                            return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, Role = player.Role, Voto = 6m, VotoFinale = 6m};
                         }
 
-                        return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, VotoFinale = 0m };
+                        return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, Role = player.Role};
                     })).Where(w => w != null).ToList();
 
             var idealSelections = GetIdealSelection(teams, teamPlayerRatings);
@@ -46,25 +47,35 @@ namespace WindowsFormsApp1
             var idealSelections = new List<Selection>();
             foreach (var team in teams)
             {
-                var idealSelection = new Selection{TeamName = $"Best {team.Name}" };
-                var teamRatings =teamPlayerRatings.Where(rating => team.Players.Any(player => string.Equals(player.Name, rating.Name, StringComparison.OrdinalIgnoreCase) && rating.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)));
-                idealSelection.PlayersOnField = teamRatings.OrderByDescending(o => o.VotoFinale).Skip(0).Take(11).Select(s=>new SelectedPlayer
-                {
-                    Name = s.Name,
-                    Role = s.Role,
-                    RealTeam = s.RealTeam,
-                    Voto = s.Voto,
-                    VotoFinale = s.VotoFinale
-                }).ToList();
+                var idealTeamname = $"Best {team.Name}";
+                var teamRatings = teamPlayerRatings.Where(rating => team.Players.Any(player => string.Equals(player.Name, rating.Name, StringComparison.OrdinalIgnoreCase) && rating.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase))).ToList();
 
-                idealSelection.PlayersOnBench = teamRatings.OrderByDescending(o => o.VotoFinale).Skip(11).Take(7).Select(s => new SelectedPlayer
-                {
-                    Name = s.Name,
-                    Role = s.Role,
-                    RealTeam = s.RealTeam,
-                    Voto = s.Voto,
-                    VotoFinale = s.VotoFinale
-                }).ToList();
+                var allModules = Configurations.AVAILABLE_MODULES.Select(
+                    module =>
+                    {
+                        var numberOfDefenders = int.Parse(module.Substring(0, 1));
+                        var numberOfMidfielders = int.Parse(module.Substring(1, 1));
+                        var numberOfStrikers = int.Parse(module.Substring(2, 1));
+
+                        var bestGoalkeeper = teamRatings.Where(w => w.Role == Role.P).OrderByDescending(o => o.VotoFinale ?? 0).Take(1);
+                        var bestDefenders = teamRatings.Where(w => w.Role == Role.D).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfDefenders);
+                        var bestMidfielders = teamRatings.Where(w => w.Role == Role.C).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfMidfielders);
+                        var bestStrikers = teamRatings.Where(w => w.Role == Role.A).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfStrikers);
+                        var top11 = bestGoalkeeper.Concat(bestDefenders).Concat(bestMidfielders).Concat(bestStrikers).ToList();
+                        var bestBanch = teamRatings.Where(x => !top11.Contains(x)).OrderByDescending(o => o.VotoFinale ?? 0).Take(7);
+                        var totalScore = top11.Sum(s => s.VotoFinale);
+
+                        return new Selection
+                        {
+                            TeamName = idealTeamname,
+                            Module = module,
+                            PlayersOnField = top11.Select(s => new SelectedPlayer { Name = s.Name, Role = s.Role, RealTeam = s.RealTeam, Voto = s.Voto, VotoFinale = s.VotoFinale }).ToList(),
+                            PlayersOnBench = bestBanch.Select(s => new SelectedPlayer { Name = s.Name, Role = s.Role, RealTeam = s.RealTeam, Voto = s.Voto, VotoFinale = s.VotoFinale }).ToList(),
+                            TotalScore = totalScore.Value
+                        };
+                    }).ToList();
+
+                var idealSelection = allModules.OrderByDescending(o => o.TotalScore).ThenBy(o=>o.Module).First();
 
                 idealSelections.Add(idealSelection);
             }
@@ -107,7 +118,7 @@ namespace WindowsFormsApp1
                 var panel = (Panel) this.Controls.Find($"panel{i}", false).Single();
                 var grid1 = (DataGridView)panel.Controls.Find($"dataGridView{i}", false).Single();
                 var grid2 = (DataGridView)panel.Controls.Find($"dataGridView{i}a", false).Single();
-                
+
                 grid1.BackgroundColor = panel.BackColor;
                 grid2.BackgroundColor = panel.BackColor;
                 grid1.ColumnCount = 2;
@@ -150,6 +161,13 @@ namespace WindowsFormsApp1
                     FillGridLine(idealSelection.PlayersOnBench[index], grid2, rowIndex);
                     rowIndex++;
                 }
+
+                ((TextBox) panel.Controls.Find($"textBoxTeamName{i}", false).Single()).Text = selection.TeamName;
+                ((TextBox) panel.Controls.Find($"textBoxModule{i}", false).Single()).Text = selection.Module;
+                ((TextBox) panel.Controls.Find($"textBoxModule{i}a", false).Single()).Text = idealSelection.Module;
+                ((TextBox) panel.Controls.Find($"textBoxScore{i}", false).Single()).Text = selection.TotalScore.ToString(CultureInfo.InvariantCulture);
+                ((TextBox) panel.Controls.Find($"textBoxScore{i}a", false).Single()).Text = idealSelection.TotalScore.ToString(CultureInfo.InvariantCulture);
+                ((TextBox)panel.Controls.Find($"textBoxAccuracy{i}", false).Single()).Text = decimal.Round(selection.TotalScore / idealSelection.TotalScore * 100, 1).ToString(CultureInfo.InvariantCulture);
 
                 i++;
             }
