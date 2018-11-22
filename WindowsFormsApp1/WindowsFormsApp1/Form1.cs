@@ -326,9 +326,13 @@ namespace WindowsFormsApp1
             var i = 1;
             foreach (var team in teams)
             {
-                var grid = (DataGridView)(this.Controls.Find($"dataGridView{i}", false).Single());
+                var grid = (DataGridView)this.Controls.Find($"dataGridView{i}", false).Single();
                 grid.BackgroundColor = this.BackColor;
                 grid.ColumnCount = 3;
+                grid.Columns[0].Width = 111;
+                grid.Columns[1].Width = 25;
+                grid.Columns[2].Width = 35;
+
                 grid.RowCount = team.Players.Count + 1;
                 var rowIndex = 0;
 
@@ -339,6 +343,7 @@ namespace WindowsFormsApp1
                         FillGridLine(x, grid, rowIndex);
                         rowIndex++;
                     });
+                grid.Visible = true;
                 i++;
             }
         }
