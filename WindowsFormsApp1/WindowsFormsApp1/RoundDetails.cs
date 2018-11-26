@@ -119,8 +119,6 @@ namespace WindowsFormsApp1
                 var grid1 = (DataGridView)panel.Controls.Find($"dataGridView{i}", false).Single();
                 var grid2 = (DataGridView)panel.Controls.Find($"dataGridView{i}a", false).Single();
 
-                //grid1.BackgroundColor = panel.BackColor;
-                //grid2.BackgroundColor = panel.BackColor;
                 grid1.ColumnCount = 2;
                 grid2.ColumnCount = 2;
                 grid1.RowCount = 20;
