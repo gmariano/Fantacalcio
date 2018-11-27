@@ -394,6 +394,100 @@ namespace WindowsFormsApp1
             var roundDetailsForm = new RoundDetails((Round)comboBox1.SelectedValue);
             roundDetailsForm.Show();
         }
+
+        private void SaveRoundDetails(Round round)
+        {
+            var teams = GetTeams();
+            var realTeamNames = teams.SelectMany(t => t.Players.Select(p => p.RealTeam)).Distinct().ToList();
+            var selections = GetSelections(round.LeagueRound);
+            var ratings = GetPlayersRating(round.SerieARound);
+            var teamPlayerRatings = teams.SelectMany(
+                t => t.Players.Select(
+                    player =>
+                    {
+                        var result = ratings.SingleOrDefault(s => string.Equals(player.Name, s.Name, StringComparison.OrdinalIgnoreCase) && s.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase));
+                        if (result != null)
+                        {
+                            return result;
+                        }
+
+                        if (!realTeamNames.Any(x => x.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, Role = player.Role, Voto = 6m, VotoFinale = 6m };
+                        }
+
+                        return new PlayerRating { Name = player.Name, RealTeam = player.RealTeam, Role = player.Role };
+                    })).Where(w => w != null).ToList();
+
+            var idealSelections = GetIdealSelection(teams, teamPlayerRatings);
+        }
+
+        private List<Team> GetTeams()
+        {
+            using (var streamReader = new StreamReader(Configurations.ROSE_JSON_PATH))
+            {
+                var json = streamReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<List<Team>>(json);
+            }
+        }
+
+        private List<Selection> GetSelections(int round)
+        {
+            using (var streamReader = new StreamReader(Configurations.FORMAZIONI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json"))
+            {
+                var json = streamReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<List<Selection>>(json);
+            }
+        }
+
+        private List<PlayerRating> GetPlayersRating(int round)
+        {
+            using (var streamReader = new StreamReader(Configurations.VOTI_PATH + $"\\{round.ToString().PadLeft(2, '0')}.json"))
+            {
+                var json = streamReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<List<PlayerRating>>(json);
+            }
+        }
+
+        private List<Selection> GetIdealSelection(List<Team> teams, List<PlayerRating> teamPlayerRatings)
+        {
+            var idealSelections = new List<Selection>();
+            foreach (var team in teams)
+            {
+                var teamRatings = teamPlayerRatings.Where(rating => team.Players.Any(player => string.Equals(player.Name, rating.Name, StringComparison.OrdinalIgnoreCase) && rating.RealTeam.StartsWith(player.RealTeam, StringComparison.OrdinalIgnoreCase))).ToList();
+
+                var allModules = Configurations.AVAILABLE_MODULES.Select(
+                    module =>
+                    {
+                        var numberOfDefenders = int.Parse(module.Substring(0, 1));
+                        var numberOfMidfielders = int.Parse(module.Substring(1, 1));
+                        var numberOfStrikers = int.Parse(module.Substring(2, 1));
+
+                        var bestGoalkeeper = teamRatings.Where(w => w.Role == Role.P).OrderByDescending(o => o.VotoFinale ?? 0).Take(1);
+                        var bestDefenders = teamRatings.Where(w => w.Role == Role.D).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfDefenders);
+                        var bestMidfielders = teamRatings.Where(w => w.Role == Role.C).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfMidfielders);
+                        var bestStrikers = teamRatings.Where(w => w.Role == Role.A).OrderByDescending(o => o.VotoFinale ?? 0).Take(numberOfStrikers);
+                        var top11 = bestGoalkeeper.Concat(bestDefenders).Concat(bestMidfielders).Concat(bestStrikers).ToList();
+                        var bestBanch = teamRatings.Where(x => !top11.Contains(x)).OrderByDescending(o => o.VotoFinale ?? 0).Take(7);
+                        var totalScore = top11.Sum(s => s.VotoFinale);
+
+                        return new Selection
+                        {
+                            TeamName = team.Name,
+                            Module = module,
+                            PlayersOnField = top11.Select(s => new SelectedPlayer { Name = s.Name, Role = s.Role, RealTeam = s.RealTeam, Voto = s.Voto, VotoFinale = s.VotoFinale }).ToList(),
+                            PlayersOnBench = bestBanch.Select(s => new SelectedPlayer { Name = s.Name, Role = s.Role, RealTeam = s.RealTeam, Voto = s.Voto, VotoFinale = s.VotoFinale }).ToList(),
+                            TotalScore = totalScore.Value
+                        };
+                    }).ToList();
+
+                var idealSelection = allModules.OrderByDescending(o => o.TotalScore).ThenBy(o => o.Module).First();
+
+                idealSelections.Add(idealSelection);
+            }
+
+            return idealSelections;
+        }
     }
 
     internal sealed class PlayersCoordinates
